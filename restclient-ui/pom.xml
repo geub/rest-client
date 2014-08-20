@@ -51,11 +51,6 @@
             <version>3.4.1-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>br.com.softplan.unj</groupId>
-            <artifactId>restclient-unj</artifactId>
-            <version>3.4.1-SNAPSHOT</version>
-        </dependency>             
-        <dependency>
             <groupId>org.wiztools.restclient</groupId>
             <artifactId>restclient-lib</artifactId>
             <version>3.4.1-SNAPSHOT</version>
