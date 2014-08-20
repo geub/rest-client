@@ -11,12 +11,12 @@ import com.mycila.guice.ext.jsr250.Jsr250Module;
  * @author subwiz
  */
 public class ServiceLocator {
-    private static final Injector injector =  Guice.createInjector(
-            Stage.PRODUCTION, new CloseableModule(), new Jsr250Module());
+	private static final Injector injector =  Guice.createInjector(
+		Stage.PRODUCTION, new CloseableModule(), new Jsr250Module(), new CustomAuthInstallerModule());
 
-    private ServiceLocator() {}
-    
-    public static <T> T getInstance(Class<T> c) {
-        return injector.getInstance(c);
-    }
+	private ServiceLocator() {}
+
+	public static <T> T getInstance(Class<T> c) {
+		return injector.getInstance(c);
+	}
 }

@@ -224,6 +224,10 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
                 hcBuilder.setDefaultCredentialsProvider(credsProvider);
             }
             
+            if(auth instanceof CustomAuth) {
+            	((CustomAuth) auth).configureRequest(request);
+            }
+            
             // Authorization header
             // Logic written in same place where Header is processed--a little down!
         }
@@ -241,6 +245,7 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
                     }
                 }
             }
+            
 
             // Get request headers
             MultiValueMap<String, String> header_data = request.getHeaders();
