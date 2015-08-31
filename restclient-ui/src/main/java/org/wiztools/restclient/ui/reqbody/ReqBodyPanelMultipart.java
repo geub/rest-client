@@ -15,6 +15,7 @@ import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import org.wiztools.restclient.bean.*;
 import org.wiztools.restclient.ui.RESTView;
+import org.wiztools.restclient.ui.UIUtil;
 
 /**
  *
@@ -31,8 +32,12 @@ public class ReqBodyPanelMultipart extends JPanel implements ReqBodyPanel {
     @Inject
     private AddMultipartStringDialog jd_addStringDialog;
     
+    @Inject
+    private MultipartOptionsDialog jd_options;
+    
     private final JButton jb_string = new JButton("String");
     private final JButton jb_file = new JButton("File");
+    private final JButton jb_config = new JButton(UIUtil.getIconFromClasspath("org/wiztools/restclient/cog.png"));
     
     private final MultipartTableModel model = new MultipartTableModel();
     private final JTable jt = new JTable(model);
@@ -40,7 +45,7 @@ public class ReqBodyPanelMultipart extends JPanel implements ReqBodyPanel {
     private class MultipartTableModel extends AbstractTableModel {
         
         private final String[] columnNames = new String[]{"Type", "Content-type", "Name", "Part"};
-        private final LinkedList<ReqEntityPart> list = new LinkedList<ReqEntityPart>();
+        private final LinkedList<ReqEntityPart> list = new LinkedList<>();
 
         @Override
         public int getRowCount() {
@@ -164,8 +169,10 @@ public class ReqBodyPanelMultipart extends JPanel implements ReqBodyPanel {
         setLayout(new BorderLayout());
         
         { // North:
-            JPanel jp = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            jp.add(new JLabel("Add Part: "));
+            JPanel jp_border = new JPanel(new BorderLayout(0, 0));
+            
+            JPanel jp_center = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            jp_center.add(new JLabel("Add Part: "));
             { // String button:
                 jb_string.addActionListener(new ActionListener() {
                     @Override
@@ -173,7 +180,7 @@ public class ReqBodyPanelMultipart extends JPanel implements ReqBodyPanel {
                         jd_addStringDialog.setVisible(true);
                     }
                 });
-                jp.add(jb_string);
+                jp_center.add(jb_string);
             }
             { // file button:
                 jb_file.addActionListener(new ActionListener() {
@@ -182,9 +189,24 @@ public class ReqBodyPanelMultipart extends JPanel implements ReqBodyPanel {
                         jd_addFileDialog.setVisible(true);
                     }
                 });
-                jp.add(jb_file);
+                jp_center.add(jb_file);
             }
-            add(jp, BorderLayout.NORTH);
+            jp_border.add(jp_center, BorderLayout.CENTER);
+            
+            JPanel jp_east = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            { // config button:
+                jb_config.setToolTipText("Set multipart mode");
+                jb_config.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        jd_options.setVisible(true);
+                    }
+                });
+                jp_east.add(jb_config);
+            }
+            jp_border.add(jp_east, BorderLayout.EAST);
+            
+            add(jp_border, BorderLayout.NORTH);
         }
         
         // Center:
@@ -204,18 +226,23 @@ public class ReqBodyPanelMultipart extends JPanel implements ReqBodyPanel {
     public void enableBody() {
         jb_string.setEnabled(true);
         jb_file.setEnabled(true);
+        jb_config.setEnabled(true);
         jt.setEnabled(true);
+        jd_options.setEnabled(true);
     }
     
     @Override
     public void disableBody() {
         jb_string.setEnabled(false);
         jb_file.setEnabled(false);
+        jb_config.setEnabled(false);
         jt.setEnabled(false);
+        jd_options.setEnabled(false);
     }
     
     @Override
     public void clear() {
+        jd_options.clear();
         model.clear();
     }
 
@@ -223,6 +250,13 @@ public class ReqBodyPanelMultipart extends JPanel implements ReqBodyPanel {
     public void setEntity(ReqEntity entity) {
         if(entity instanceof ReqEntityMultipart) {
             ReqEntityMultipart e = (ReqEntityMultipart) entity;
+            
+            MultipartSubtype type = e.getSubtype();
+            jd_options.setSelectedSubtype(type);
+            
+            MultipartMode mode = e.getMode();
+            jd_options.setSelectedMode(mode);
+            
             List<ReqEntityPart> parts = e.getBody();
             for(ReqEntityPart part: parts) {
                 model.addPartLast(part);
@@ -232,7 +266,11 @@ public class ReqBodyPanelMultipart extends JPanel implements ReqBodyPanel {
     
     @Override
     public ReqEntity getEntity() {
-        ReqEntity entity = new ReqEntityMultipartBean((LinkedList<ReqEntityPart>)model.list.clone());
+        MultipartSubtype type = jd_options.getSelectedSubtype();
+        MultipartMode mode = jd_options.getSelectedMode();
+        
+        ReqEntity entity = new ReqEntityMultipartBean(
+                (LinkedList<ReqEntityPart>)model.list.clone(), mode, type);
         return entity;
     }
     

@@ -4,7 +4,9 @@ import java.io.File;
 import org.junit.*;
 import static org.junit.Assert.*;
 import org.wiztools.restclient.bean.*;
-import org.wiztools.restclient.util.XMLUtil;
+import org.wiztools.restclient.persistence.PersistenceRead;
+import org.wiztools.restclient.persistence.XmlPersistenceRead;
+import org.wiztools.restclient.persistence.XmlPersistenceWrite;
 
 /**
  *
@@ -34,7 +36,8 @@ public class AuthElementTest {
     @Test
     public void testOAuth2Bearer() throws Exception {
         System.out.println("testOAuth2Bearer");
-        Request req = XMLUtil.getRequestFromXMLFile(new File("src/test/resources/reqOAuth2Bearer.rcq"));
+        PersistenceRead p = new XmlPersistenceRead();
+        Request req = p.getRequestFromFile(new File("src/test/resources/reqOAuth2Bearer.rcq"));
         Auth a = req.getAuth();
         OAuth2BearerAuth auth = (OAuth2BearerAuth) a;
         assertEquals("subhash", auth.getOAuth2BearerToken());
@@ -43,7 +46,8 @@ public class AuthElementTest {
     @Test
     public void testNtlm() throws Exception {
         System.out.println("testNtlm");
-        Request req = XMLUtil.getRequestFromXMLFile(new File("src/test/resources/reqNtlm.rcq"));
+        PersistenceRead p = new XmlPersistenceRead();
+        Request req = p.getRequestFromFile(new File("src/test/resources/reqNtlm.rcq"));
         Auth a = req.getAuth();
         NtlmAuth auth = (NtlmAuth) a;
         

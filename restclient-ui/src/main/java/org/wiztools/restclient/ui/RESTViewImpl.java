@@ -41,6 +41,7 @@ import org.wiztools.restclient.ui.resbody.ResBodyPanel;
 import org.wiztools.restclient.ui.resheader.ResHeaderPanel;
 import org.wiztools.restclient.ui.resstatus.ResStatusPanel;
 import org.wiztools.restclient.ui.restest.ResTestPanel;
+import org.wiztools.restclient.util.ContentTypesCommon;
 import org.wiztools.restclient.util.HttpUtil;
 import org.wiztools.restclient.util.Util;
 
@@ -94,7 +95,8 @@ public class RESTViewImpl extends JPanel implements RESTView {
         jtp.addTab("Method", jp_req_method.getComponent());
         
         // Headers Tab
-        jp_2col_req_headers = new TwoColumnTablePanel(new String[]{"Header", "Value"}, rest_ui);
+        jp_2col_req_headers = new TwoColumnTablePanel(
+                new String[]{"Header", "Value"}, ContentTypesCommon.getCommon(), rest_ui);
         jtp.addTab("Header", jp_2col_req_headers);
         
         // Cookies Tab
@@ -485,7 +487,7 @@ public class RESTViewImpl extends JPanel implements RESTView {
     }
     
     private List<String> validateRequest(Request request){
-        List<String> errors = new ArrayList<String>();
+        List<String> errors = new ArrayList<>();
 
         // Check URL
         if(request.getUrl() == null){
@@ -503,10 +505,8 @@ public class RESTViewImpl extends JPanel implements RESTView {
         if(jp_req_method.doesSelectedMethodSupportEntityBody()) {
             ReqEntity entity = jp_req_body.getEntity();
             if(entity instanceof ReqEntitySimple) {
-                if(entity != null) {
-                    if(((ReqEntitySimple)entity).getContentType() == null) {
-                        errors.add("Content type not set for body.");
-                    }
+                if(((ReqEntitySimple)entity).getContentType() == null) {
+                    errors.add("Content type not set for body.");
                 }
             }
         }
@@ -583,7 +583,7 @@ public class RESTViewImpl extends JPanel implements RESTView {
         
         // Cookies
         List<HttpCookie> cookies = request.getCookies();
-        MultiValueMap<String, String> cookiesMap = new MultiValueMapArrayList<String, String>();
+        MultiValueMap<String, String> cookiesMap = new MultiValueMapArrayList<>();
         
         int version = CookieVersion.DEFAULT_VERSION.getIntValue();
         for(HttpCookie cookie: cookies) {

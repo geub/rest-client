@@ -10,13 +10,16 @@ import org.wiztools.restclient.bean.Request;
 import org.wiztools.restclient.bean.RequestBean;
 import org.wiztools.restclient.bean.SSLHostnameVerifier;
 import org.wiztools.restclient.bean.SSLReqBean;
-import org.wiztools.restclient.util.XMLUtil;
+import org.wiztools.restclient.persistence.PersistenceRead;
+import org.wiztools.restclient.persistence.XmlPersistenceRead;
 
 /**
  *
  * @author subwiz
  */
 public class SslTest {
+    
+    private PersistenceRead p = new XmlPersistenceRead();
     
     public SslTest() {
     }
@@ -49,7 +52,7 @@ public class SslTest {
         ssl.setHostNameVerifier(SSLHostnameVerifier.ALLOW_ALL);
         expResult.setSslReq(ssl);
         
-        Request actual = XMLUtil.getRequestFromXMLFile(new File("src/test/resources/reqSsl.rcq"));
+        Request actual = p.getRequestFromFile(new File("src/test/resources/reqSsl.rcq"));
         
         assertEquals(expResult, actual);
     }

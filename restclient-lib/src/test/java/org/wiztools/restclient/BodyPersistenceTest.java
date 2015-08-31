@@ -10,13 +10,16 @@ import static org.junit.Assert.*;
 import org.wiztools.commons.Charsets;
 import org.wiztools.commons.FileUtil;
 import org.wiztools.restclient.bean.*;
-import org.wiztools.restclient.util.XMLUtil;
+import org.wiztools.restclient.persistence.PersistenceRead;
+import org.wiztools.restclient.persistence.XmlPersistenceRead;
 
 /**
  *
  * @author subwiz
  */
 public class BodyPersistenceTest {
+    
+    private PersistenceRead p = new XmlPersistenceRead();
     
     public BodyPersistenceTest() {
     }
@@ -54,7 +57,7 @@ public class BodyPersistenceTest {
         ReqEntityStringBean body = new ReqEntityStringBean("Subhash loves Aarthi", ct);
         expResult.setBody(body);
         
-        Request actual = XMLUtil.getRequestFromXMLFile(new File("src/test/resources/reqBodyString.rcq"));
+        Request actual = p.getRequestFromFile(new File("src/test/resources/reqBodyString.rcq"));
         
         assertEquals(expResult, actual);
     }
@@ -67,7 +70,7 @@ public class BodyPersistenceTest {
         ReqEntityFileBean body = new ReqEntityFileBean(new File("/etc/hosts"), ct);
         expResult.setBody(body);
         
-        Request actual = XMLUtil.getRequestFromXMLFile(new File("src/test/resources/reqBodyFile.rcq"));
+        Request actual = p.getRequestFromFile(new File("src/test/resources/reqBodyFile.rcq"));
         
         assertEquals(expResult, actual);
     }
@@ -81,7 +84,7 @@ public class BodyPersistenceTest {
         ReqEntityByteArrayBean body = new ReqEntityByteArrayBean(arr, ct);
         expResult.setBody(body);
         
-        Request actual = XMLUtil.getRequestFromXMLFile(new File("src/test/resources/reqBodyByteArray.rcq"));
+        Request actual = p.getRequestFromFile(new File("src/test/resources/reqBodyByteArray.rcq"));
         
         assertEquals(expResult, actual);
     }
@@ -95,9 +98,9 @@ public class BodyPersistenceTest {
         ReqEntityStringPartBean partString = new ReqEntityStringPartBean("aarthi.txt", ct, "Hello Babes!");
         parts.add(partFile);
         parts.add(partString);
-        ReqEntityMultipartBean expResult = new ReqEntityMultipartBean(parts);
+        ReqEntityMultipartBean expResult = new ReqEntityMultipartBean(parts, null, MultipartSubtype.FORM_DATA);
         
-        Request actual = XMLUtil.getRequestFromXMLFile(new File("src/test/resources/reqBodyMultipart.rcq"));
+        Request actual = p.getRequestFromFile(new File("src/test/resources/reqBodyMultipart.rcq"));
         assertEquals(expResult, actual.getBody());
     }
 }

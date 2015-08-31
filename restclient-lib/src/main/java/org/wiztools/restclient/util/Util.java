@@ -16,10 +16,12 @@ import org.apache.commons.codec.binary.Base64;
 import org.wiztools.commons.Charsets;
 import org.wiztools.commons.MultiValueMap;
 import org.wiztools.restclient.Base64Exception;
-import org.wiztools.restclient.XMLException;
+import org.wiztools.restclient.persistence.XMLException;
 import org.wiztools.restclient.bean.ReqResBean;
 import org.wiztools.restclient.bean.Request;
 import org.wiztools.restclient.bean.Response;
+import org.wiztools.restclient.persistence.XmlPersistenceRead;
+import org.wiztools.restclient.persistence.XmlPersistenceWrite;
 
 /**
  *
@@ -109,12 +111,14 @@ public final class Util {
 
     public static void createReqResArchive(Request request, Response response, File zipFile)
             throws IOException, XMLException {
+        XmlPersistenceWrite xWriter = new XmlPersistenceWrite();
+        
         File requestFile = File.createTempFile("req-", ".xml");
         File responseFile = File.createTempFile("res-", ".xml");
-        XMLUtil.writeRequestXML(request, requestFile);
-        XMLUtil.writeResponseXML(response, responseFile);
+        xWriter.writeRequest(request, requestFile);
+        xWriter.writeResponse(response, responseFile);
 
-        Map<String, File> files = new HashMap<String, File>();
+        Map<String, File> files = new HashMap<>();
         files.put("request.rcq", requestFile);
         files.put("response.rcs", responseFile);
         byte[] buf = new byte[BUFF_SIZE];
@@ -181,13 +185,14 @@ public final class Util {
                     dest.flush();
                     dest.close();
 
+                    XmlPersistenceRead xUtl = new XmlPersistenceRead();
                     if (entry.getName().equals("request.rcq")) {
-                        Request reqBean = XMLUtil.getRequestFromXMLFile(tmpFile);
+                        Request reqBean = xUtl.getRequestFromFile(tmpFile);
                         encpBean.setRequestBean(reqBean);
                         isReqRead = true;
                     }
                     else if(entry.getName().equals("response.rcs")){
-                        Response resBean = XMLUtil.getResponseFromXMLFile(tmpFile);
+                        Response resBean = xUtl.getResponseFromFile(tmpFile);
                         encpBean.setResponseBean(resBean);
                         isResRead = true;
                     }

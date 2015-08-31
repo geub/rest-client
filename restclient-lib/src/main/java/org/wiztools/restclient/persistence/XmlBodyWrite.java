@@ -1,113 +1,20 @@
-package org.wiztools.restclient.util;
+package org.wiztools.restclient.persistence;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.List;
 import nu.xom.Attribute;
 import nu.xom.Element;
-import nu.xom.Elements;
+import org.wiztools.commons.MultiValueMap;
 import org.wiztools.commons.StringUtil;
-import org.wiztools.restclient.XMLException;
 import org.wiztools.restclient.bean.*;
+import org.wiztools.restclient.util.Util;
 
 /**
  *
  * @author subwiz
  */
-class XmlBodyUtil {
-    private XmlBodyUtil() {}
+class XmlBodyWrite {
     
-    static ReqEntity getReqEntity(Element eEntity) {
-        Elements eChildren = eEntity.getChildElements();
-        for(int i=0; i<eChildren.size(); i++) {
-            Element e = eChildren.get(i);
-            final String name = e.getLocalName();
-            if("string".equals(name)) {
-                ContentType ct = getContentType(e);
-                String body = e.getValue();
-                return new ReqEntityStringBean(body, ct);
-            }
-            else if("file".equals(name)) {
-                ContentType ct = getContentType(e);
-                String filePath = e.getValue();
-                return new ReqEntityFileBean(new File(filePath), ct);
-            }
-            else if("byte-array".equals(name)) {
-                ContentType ct = getContentType(e);
-                byte[] body = Util.base64decodeByteArray(e.getValue());
-                return new ReqEntityByteArrayBean(body, ct);
-            }
-            else if("url-stream".equals(name)) {
-                try {
-                    ContentType ct = getContentType(e);
-                    URL url = new URL(e.getValue());
-                    return new ReqEntityUrlStreamBean(ct, url);
-                }
-                catch(MalformedURLException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-            else if("multipart".equals(name)) {
-                List<ReqEntityPart> parts = getMultipartParts(e);
-                return new ReqEntityMultipartBean(parts);
-            }
-            else {
-                throw new XMLException("Unsupported element encountered inside <body>: " + name);
-            }
-        }
-        return null;
-    }
-    
-    private static List<ReqEntityPart> getMultipartParts(Element e) {
-        List<ReqEntityPart> parts = new ArrayList<>();
-        Elements children = e.getChildElements();
-        for(int i=0; i<children.size(); i++) {
-            ReqEntityPart part = getMultipartPart(children.get(i));
-            parts.add(part);
-        }
-        return parts;
-    }
-    
-    private static ReqEntityPart getMultipartPart(Element e) {
-        final String name = e.getLocalName();
-        
-        final String partName = e.getAttributeValue("name");
-        final ContentType ct = getContentType(e);
-        
-        if("string".equals(name)) {
-            String partBody = e.getValue();
-            return new ReqEntityStringPartBean(partName, ct, partBody);
-        }
-        else if("file".equals(name)) {
-            File file = new File(e.getValue());
-            String fileName = e.getAttributeValue("filename");
-            
-            // filename: backward-compatibility:
-            fileName = StringUtil.isEmpty(fileName)? file.getName(): fileName;
-            
-            return new ReqEntityFilePartBean(partName, fileName, ct, file);
-        }
-        else {
-            throw new XMLException("Unsupported element encountered inside <multipart>: " + name);
-        }
-    }
-    
-    private static ContentType getContentType(Element e) {
-        String contentType = e.getAttributeValue("content-type");
-        String charsetStr = e.getAttributeValue("charset");
-        if(StringUtil.isNotEmpty(contentType)) {
-            return new ContentTypeBean(contentType,
-                (charsetStr!=null? Charset.forName(charsetStr): null));
-        }
-        else {
-            return null;
-        }
-    }
-    
-    static Element getReqEntity(ReqEntity bean) {
+    Element getReqEntity(ReqEntity bean) {
         Element eBody = new Element("body");
         
         if(bean instanceof ReqEntityString) {
@@ -151,6 +58,12 @@ class XmlBodyUtil {
             
             Element eMultipart = new Element("multipart");
             
+            eMultipart.addAttribute(
+                    new Attribute("subtype", entity.getSubtype().name()));
+            
+            eMultipart.addAttribute(
+                    new Attribute("mode", entity.getMode().name()));
+            
             List<ReqEntityPart> parts = entity.getBody();
             for(ReqEntityPart part: parts) {
                 if(part instanceof ReqEntityStringPart) {
@@ -159,7 +72,28 @@ class XmlBodyUtil {
                     Element ePart = new Element("string");
                     addContentTypeCharsetAttribute(p.getContentType(), ePart);
                     ePart.addAttribute(new Attribute("name", p.getName()));
-                    ePart.appendChild(p.getPart());
+                    
+                    Element eContent = new Element("content");
+                    eContent.appendChild(p.getPart());
+                    ePart.appendChild(eContent);
+                    
+                    Element eFields = new Element("fields");
+                    MultiValueMap<String, String> fields = p.getFields();
+                    for(String k: fields.keySet()) {
+                        for(String value: fields.get(k)) {
+                            Element eField = new Element("field");
+
+                            Element eName = new Element("name");
+                            eName.appendChild(k);
+                            eField.appendChild(eName);
+                            
+                            Element eValue = new Element("value");
+                            eValue.appendChild(value);
+                            eField.appendChild(eValue);
+
+                            eFields.appendChild(eField);
+                        }
+                    }
                     
                     eMultipart.appendChild(ePart);
                 }
@@ -178,7 +112,10 @@ class XmlBodyUtil {
                             ePart.addAttribute(new Attribute("filename", p.getPart().getName()));
                         }
                     }
-                    ePart.appendChild(p.getPart().getAbsolutePath());
+                    Element eContent = new Element("content");
+                    eContent.appendChild(p.getPart().getAbsolutePath());
+                    
+                    ePart.appendChild(eContent);
                     
                     eMultipart.appendChild(ePart);
                 }

@@ -1,4 +1,4 @@
-package org.wiztools.restclient.util;
+package org.wiztools.restclient.persistence;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,8 +8,7 @@ import nu.xom.Attribute;
 import nu.xom.Document;
 import nu.xom.Element;
 import nu.xom.Elements;
-import org.wiztools.restclient.RCConstants;
-import org.wiztools.restclient.XMLException;
+import org.wiztools.restclient.Versions;
 import org.wiztools.restclient.bean.Request;
 
 /**
@@ -22,31 +21,42 @@ public final class XMLCollectionUtil {
     
     public static void writeRequestCollectionXML(final List<Request> requests, final File f)
             throws IOException, XMLException {
+        XmlPersistenceWrite xUtl = new XmlPersistenceWrite();
+        
         Element eRoot = new Element("request-collection");
-        eRoot.addAttribute(new Attribute("version", RCConstants.VERSION));
+        eRoot.addAttribute(new Attribute("version", Versions.CURRENT));
         for(Request req: requests) {
-            Element e = XMLUtil.getRequestElement(req);
+            Element e = xUtl.getRequestElement(req);
             eRoot.appendChild(e);
         }
         Document doc = new Document(eRoot);
-        XMLUtil.writeXML(doc, f);
+        xUtl.writeXML(doc, f);
     }
     
     public static List<Request> getRequestCollectionFromXMLFile(final File f)
             throws IOException, XMLException {
-        List<Request> out = new ArrayList<Request>();
-        Document doc = XMLUtil.getDocumentFromFile(f);
+        XmlPersistenceRead xUtlRead = new XmlPersistenceRead();
+        
+        List<Request> out = new ArrayList<>();
+        Document doc = xUtlRead.getDocumentFromFile(f);
         Element eRoot = doc.getRootElement();
         if(!"request-collection".equals(eRoot.getLocalName())) {
             throw new XMLException("Expecting root element <request-collection>, but found: "
                     + eRoot.getLocalName());
         }
         final String version = eRoot.getAttributeValue("version");
-        XMLUtil.checkIfVersionValid(version);
+        try {
+            Versions.versionValidCheck(version);
+        }
+        catch(Versions.VersionValidationException ex) {
+            throw new XMLException(ex);
+        }
+        xUtlRead.setReadVersion(version);
+        
         Elements eRequests = doc.getRootElement().getChildElements();
         for(int i=0; i<eRequests.size(); i++) {
             Element eRequest = eRequests.get(i);
-            Request req = XMLUtil.getRequestBean(eRequest);
+            Request req = xUtlRead.getRequestBean(eRequest);
             out.add(req);
         }
         return out;

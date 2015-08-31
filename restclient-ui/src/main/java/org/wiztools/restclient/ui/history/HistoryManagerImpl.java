@@ -8,11 +8,12 @@ import java.util.logging.Logger;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import org.wiztools.restclient.XMLException;
+import org.wiztools.restclient.persistence.XMLException;
 import org.wiztools.restclient.bean.Request;
 import org.wiztools.restclient.ui.lifecycle.LifecycleManager;
 import org.wiztools.restclient.ui.lifecycle.Shutdown;
-import org.wiztools.restclient.util.XMLCollectionUtil;
+import org.wiztools.restclient.ui.reqgo.ReqUrlGoPanel;
+import org.wiztools.restclient.persistence.XMLCollectionUtil;
 
 /**
  *
@@ -25,9 +26,10 @@ public class HistoryManagerImpl implements HistoryManager {
     private int maxSize = DEFAULT_HISTORY_SIZE;
     private int cursor;
     
-    private final LinkedList<Request> data = new LinkedList<Request>();
+    private final LinkedList<Request> data = new LinkedList<>();
     
     @Inject private LifecycleManager lifecycle;
+    @Inject private ReqUrlGoPanel goPanel;
 
     @PostConstruct
     protected void init() {
@@ -36,10 +38,7 @@ public class HistoryManagerImpl implements HistoryManager {
             try {
                 load(DEFAULT_FILE);
             }
-            catch(IOException ex) {
-                ex.printStackTrace(System.err);
-            }
-            catch(XMLException ex) {
+            catch(IOException | XMLException ex) {
                 ex.printStackTrace(System.err);
             }
         }
@@ -167,6 +166,9 @@ public class HistoryManagerImpl implements HistoryManager {
     public void clear() {
         data.clear();
         cursor = 0;
+        
+        // remove combo history too:
+        goPanel.clearHistory();
     }
     
     @Override

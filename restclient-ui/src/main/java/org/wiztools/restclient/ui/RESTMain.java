@@ -30,14 +30,19 @@ import org.wiztools.restclient.FileType;
 import org.wiztools.restclient.IGlobalOptions;
 import org.wiztools.restclient.MessageI18N;
 import org.wiztools.restclient.RCConstants;
-import org.wiztools.restclient.XMLException;
+import org.wiztools.restclient.ServiceLocator;
+import org.wiztools.restclient.Versions;
+import org.wiztools.restclient.persistence.XMLException;
 import org.wiztools.restclient.bean.Request;
 import org.wiztools.restclient.bean.Response;
+import org.wiztools.restclient.persistence.PersistenceException;
+import org.wiztools.restclient.persistence.PersistenceWrite;
+import org.wiztools.restclient.persistence.XmlPersistenceWrite;
 import org.wiztools.restclient.server.TraceServer;
 import org.wiztools.restclient.ui.history.HistoryManager;
 import org.wiztools.restclient.ui.option.OptionsDialog;
+import org.wiztools.restclient.ui.update.AppUpdateRunner;
 import org.wiztools.restclient.util.Util;
-import org.wiztools.restclient.util.XMLUtil;
 
 /**
  *
@@ -82,7 +87,7 @@ class RESTMain implements RESTUserInterface {
         application.addPreferencesMenuItem();
         
         // Application logic:
-        frame = new JFrame(RCConstants.TITLE + RCConstants.VERSION);
+        frame = new JFrame(RCConstants.TITLE + Versions.CURRENT);
     }
     
     @Override
@@ -652,6 +657,9 @@ class RESTMain implements RESTUserInterface {
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+        
+        // Update check:
+        new Thread(ServiceLocator.getInstance(AppUpdateRunner.class)).start();
     }
     
     private void openUrl(String url) {
@@ -885,6 +893,7 @@ class RESTMain implements RESTUserInterface {
     }
     
     private void actionSave(final FileChooserType type){
+        PersistenceWrite p = new XmlPersistenceWrite();
         if(type == FileChooserType.SAVE_REQUEST){
             Request request = view.getLastRequest();
 
@@ -907,13 +916,10 @@ class RESTMain implements RESTUserInterface {
                 File f = getSaveFile(FileChooserType.SAVE_REQUEST);
                 if(f != null){
                     try{
-                        XMLUtil.writeRequestXML(request, f);
+                        p.writeRequest(request, f);
                         recentFilesHelper.openedFile(f);
                     }
-                    catch(IOException ex){
-                        view.showError(Util.getStackTrace(ex));
-                    }
-                    catch(XMLException ex){
+                    catch(IOException | PersistenceException ex) {
                         view.showError(Util.getStackTrace(ex));
                     }
                 }
@@ -940,13 +946,10 @@ class RESTMain implements RESTUserInterface {
             File f = getSaveFile(FileChooserType.SAVE_RESPONSE);
             if(f != null){
                 try{
-                    XMLUtil.writeResponseXML(response, f);
+                    p.writeResponse(response, f);
                     recentFilesHelper.openedFile(f);
                 }
-                catch(IOException ex){
-                    view.showError(Util.getStackTrace(ex));
-                }
-                catch(XMLException ex){
+                catch(IOException | PersistenceException ex) {
                     view.showError(Util.getStackTrace(ex));
                 }
             }
