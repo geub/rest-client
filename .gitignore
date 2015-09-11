@@ -4,3 +4,6 @@
 /restclient-cli/target/
 /restclient-jfx/target/
 /target/
+.settings
+.classpath
+.project

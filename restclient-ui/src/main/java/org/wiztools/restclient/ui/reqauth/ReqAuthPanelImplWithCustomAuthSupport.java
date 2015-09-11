@@ -9,7 +9,7 @@ import javax.annotation.PostConstruct;
 import javax.swing.JComboBox;
 import javax.swing.JScrollPane;
 
-import org.wiztools.restclient.CustomAuth;
+import org.wiztools.restclient.CustomAuthInstallerModule.CustomAuth;
 import org.wiztools.restclient.bean.Auth;
 
 import com.google.inject.Inject;
